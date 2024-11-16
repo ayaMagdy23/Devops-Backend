@@ -1,21 +1,34 @@
-# Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set the working directory inside the container
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the project files to the container
-COPY . /app
+# Copy the requirements.txt first to leverage Docker's cache
+COPY requirements.txt /app/
 
 # Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Collect static files (optional, if your app serves static files)
+# Copy the rest of the application files
+COPY . /app/
+
+# Collect static files (optional, if you’re using Django static files)
 RUN python manage.py collectstatic --noinput
 
-# Expose the default Django port
+# Run database migrations (optional)
+RUN python manage.py migrate
+
+# Expose port 8000 for Django development server
 EXPOSE 8000
 
-# Define the command to run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Command to run the application
+CMD ["python", "manage.py", "runserver", "0.0.0.0:5000"]
+
+
+
+
+
