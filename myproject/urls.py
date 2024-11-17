@@ -31,14 +31,16 @@
 from django.contrib import admin
 from django.urls import path
 from django.http import HttpResponse
-from .views import get_info
+from myapps.views import get_info, ScriptAPIView  # Import necessary views
+
 # Define a simple view for the root URL
 def home(request):
     return HttpResponse("Welcome to my Django app!")
 
 urlpatterns = [
     path('', home),  # This will serve the root URL ("/")
-    path('admin/', admin.site.urls),
-     path('api/info/', get_info, name='get_info'),
-    # path('favicon.ico', favicon),  # Keep this if you have the favicon logic
+    path('admin/', admin.site.urls),  # Django admin URL
+    path('api/info/', get_info, name='get_info'),  # Path for the 'get_info' API endpoint
+    path('api/scripts/', ScriptAPIView.as_view(), name='script_api'),  # Path for your DRF-based Script API view
 ]
+
