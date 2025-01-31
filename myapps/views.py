@@ -1,44 +1,42 @@
-# from django.shortcuts import render
-
-# # Create your views here.
-# from rest_framework.decorators import api_view
-# from rest_framework.response import Response
-# from django.http import JsonResponse
-
-# @api_view(['GET'])
-# def get_info(request):
-#     data = {"message": "Hello from Django!"}
-#     return Response(data)
-
-# def get_info(request):
-#     return JsonResponse({"message": "This is a placeholder response"})
-# In myapps/views.py
-from django.http import JsonResponse  # For regular Django views
-from rest_framework.views import APIView  # For DRF views
+# views.py
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Script  # Your model
-from .serializers import ScriptSerializer  # Your serializer
+from rest_framework import status
+from .models import PipelineStage, Script, Tool
+from .serializers import ScriptSerializer, ToolSerializer  # Ensure these are defined
+from django.http import JsonResponse
 
-# This is your regular Django view that returns a JSON response
-def get_info(request):
-    data = {
-        'message': 'This is the information you requested.'
-    }
-    return JsonResponse(data)
-
-# This is your DRF API view that handles GET and POST for Script objects
+# Existing ScriptAPIView
 class ScriptAPIView(APIView):
-    # GET method to retrieve all Script objects
-    def get(self, request):
-        scripts = Script.objects.all()  # Retrieve all Script objects
-        serializer = ScriptSerializer(scripts, many=True)  # Serialize them
-        return Response(serializer.data)
+    def get(self, request, stage, format=None):
+        # Fetch the stage from the database
+        stage_obj = get_object_or_404(PipelineStage, name__iexact=stage)
 
-    # POST method to create a new Script object
-    def post(self, request):
-        serializer = ScriptSerializer(data=request.data)  # Deserialize incoming data
-        if serializer.is_valid():  # Validate the data
-            serializer.save()  # Save to the database
-            return Response(serializer.data, status=201)  # Return the serialized data
-        return Response(serializer.errors, status=400)  # Return validation errors
+        # Query all scripts linked to this stage
+        scripts = Script.objects.filter(stage=stage_obj)
 
+        if scripts.exists():
+            serializer = ScriptSerializer(scripts, many=True)
+            return Response({'scripts': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No scripts found for this stage.'}, status=status.HTTP_404_NOT_FOUND)
+
+# Existing ToolAPIView
+class ToolAPIView(APIView):
+    def get(self, request, stage, format=None):
+        # Fetch the stage from the database
+        stage_obj = get_object_or_404(PipelineStage, name__iexact=stage)
+
+        # Query all tools linked to this stage
+        tools = Tool.objects.filter(stage=stage_obj)
+
+        if tools.exists():
+            serializer = ToolSerializer(tools, many=True)
+            return Response({'tools': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No tools found for this stage.'}, status=status.HTTP_404_NOT_FOUND)
+
+# New get_info view
+def get_info(request):
+    return JsonResponse({"info": "Here is some information"})
