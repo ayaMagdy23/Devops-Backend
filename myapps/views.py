@@ -1,13 +1,12 @@
-# views.py
-from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
+from django.shortcuts import render, get_object_or_404
+from rest_framework.views import APIView  # Make sure to import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import PipelineStage, Script, Tool
 from .serializers import ScriptSerializer, ToolSerializer  # Ensure these are defined
-from django.http import JsonResponse
+from django.http import HttpResponse
 
-# Existing ScriptAPIView
+# ScriptAPIView now renders an HTML template
 class ScriptAPIView(APIView):
     def get(self, request, stage, format=None):
         # Fetch the stage from the database
@@ -17,12 +16,11 @@ class ScriptAPIView(APIView):
         scripts = Script.objects.filter(stage=stage_obj)
 
         if scripts.exists():
-            serializer = ScriptSerializer(scripts, many=True)
-            return Response({'scripts': serializer.data}, status=status.HTTP_200_OK)
+            return render(request, 'scripts_list.html', {'scripts': scripts, 'stage': stage_obj})
         else:
-            return Response({'error': 'No scripts found for this stage.'}, status=status.HTTP_404_NOT_FOUND)
+            return HttpResponse("No scripts found for this stage.", status=404)
 
-# Existing ToolAPIView
+# ToolAPIView now renders an HTML template
 class ToolAPIView(APIView):
     def get(self, request, stage, format=None):
         # Fetch the stage from the database
@@ -32,11 +30,10 @@ class ToolAPIView(APIView):
         tools = Tool.objects.filter(stage=stage_obj)
 
         if tools.exists():
-            serializer = ToolSerializer(tools, many=True)
-            return Response({'tools': serializer.data}, status=status.HTTP_200_OK)
+            return render(request, 'tools_list.html', {'tools': tools, 'stage': stage_obj})
         else:
-            return Response({'error': 'No tools found for this stage.'}, status=status.HTTP_404_NOT_FOUND)
+            return HttpResponse("No tools found for this stage.", status=404)
 
-# New get_info view
+# New get_info view, you can render some template here as well
 def get_info(request):
-    return JsonResponse({"info": "Here is some information"})
+    return render(request, 'info.html', {'info': 'Here is some information'})
