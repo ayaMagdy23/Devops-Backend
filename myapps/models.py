@@ -9,7 +9,7 @@ class PipelineStage(models.Model):
 class Script(models.Model):
     title = models.CharField(max_length=255)  # Name of the script
     description = models.TextField()  # Description or content
-    script_link = models.URLField(max_length=200, blank=True, null=True)  # Optional URL
+    script = models.URLField(blank=True, null=True)  # Optional URL
     created_at = models.DateTimeField(auto_now_add=True)  # Auto timestamp
     category = models.CharField(max_length=100, blank=True, null=True)  # Optional category
     
