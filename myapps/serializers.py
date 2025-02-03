@@ -1,32 +1,24 @@
 from rest_framework import serializers
-from .models import PipelineStage, Script, Tool, User  # Ensure User is imported
+from django.contrib.auth.models import User
+from .models import Script, Tool, ProjectDetail, PipelineStage
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        """Ensure password is stored securely"""
-        user = User.objects.create_user(**validated_data)
-        return user
-
-class PipelineStageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PipelineStage
-        fields = '__all__'
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
 class ScriptSerializer(serializers.ModelSerializer):
-    stage = serializers.PrimaryKeyRelatedField(queryset=PipelineStage.objects.all())
-
     class Meta:
         model = Script
-        fields = '__all__'
+        fields = ['title', 'description', 'script', 'category', 'stage']
 
 class ToolSerializer(serializers.ModelSerializer):
-    stage = serializers.PrimaryKeyRelatedField(queryset=PipelineStage.objects.all())
-
     class Meta:
         model = Tool
-        fields = '__all__'
+        fields = ['name', 'description', 'url', 'stage']
+
+class ProjectDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectDetail
+        fields = ['project_name', 'selected_stage', 'selected_option', 'script', 'tool', 'deployment_type', 
+                  'framework', 'hosting_platform', 'programming_language', 'project_type', 'testing_needs']
