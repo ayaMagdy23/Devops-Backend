@@ -297,4 +297,4 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
 class MonitoringDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = MonitoringData
-        fields = ['cpu_usage', 'ram_usage', 'disk_usage', 'timestamp']  # Include the fields you need
+        fields = ['cpu_usage', 'memory_usage', 'network_usage', 'disk_usage', 'timestamp']  # Include the fields you need

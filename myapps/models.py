@@ -291,7 +291,8 @@ class MonitoringData(models.Model):
     instance = models.ForeignKey(CloudInstance, on_delete=models.CASCADE, related_name="monitoring_data")
     cpu_usage = models.FloatField(help_text="CPU usage in percentage")
     memory_usage = models.FloatField(help_text="RAM usage in percentage")
-    network_usage = models.FloatField(help_text="Disk usage in percentage")
+    network_usage = models.FloatField(help_text="Network usage in percentage")  # Fixed help text
+    disk_usage = models.FloatField(help_text="Disk usage in percentage")  # Added missing field
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
