@@ -30,7 +30,7 @@ from django.contrib import admin
 from django.urls import path
 from django.http import HttpResponse, HttpResponseNotFound
 from myapps import views
-from myapps.views import FetchScriptView, InfoAPIView, LoginUserAPIView, RegisterUserAPIView, ProjectDetailAPIView ,GenerateScriptAPIView,get_csrf_token
+from myapps.views import FetchScriptView, InfoAPIView, LoginUserAPIView, RegisterUserAPIView, ProjectDetailAPIView ,GenerateScriptAPIView,get_csrf_token,post_monitor_data, get_monitor_data
 # , GenerateScriptAPIView,CreateProjectView
 
 
@@ -60,4 +60,6 @@ urlpatterns = [
     path('api/generate-script/', GenerateScriptAPIView.as_view(), name='generate-script'),
     path('api/fetch-script/<int:project_id>/<str:stage_id>/', FetchScriptView.as_view(), name='fetch_script'),
     path("csrf/", get_csrf_token, name="get_csrf_token"),
+    path('monitor/post/', post_monitor_data, name='post_monitor_data'),  # POST endpoint
+    path('monitor/get/', get_monitor_data, name='get_monitor_data'),    # GET endpoint
 ]

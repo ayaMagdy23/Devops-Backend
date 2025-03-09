@@ -145,6 +145,7 @@ INSTALLED_APPS = [
     # 'rest_framework.authtoken',
     'myapps',
     'corsheaders'
+    
 ]
 
 REST_FRAMEWORK = {

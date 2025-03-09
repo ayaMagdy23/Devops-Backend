@@ -214,29 +214,7 @@ class ProjectDetail(models.Model):
         return f'{self.project_name} - {self.selected_stage.name if self.selected_stage else "Unknown Stage"}'
 
 
-    # def generate_script(self):
-    #     """ Generate a script based on the selected stage and option. """
-    #     if self.selected_option == 'scripts' and self.selected_stage:
-    #         script, created = Script.objects.get_or_create(
-    #             project_detail=self,
-    #             stage=self.selected_stage,
-    #             defaults={"script_content": "Generated script based on selected stage and project details"}
-    #         )
-    #         if created:
-    #             self.script = script
-    #             self.save(update_fields=['script'])
-    #             return script
-    #     return None
 
-    # def generate_tool(self):
-    #     """ Fetch the first tool matching the selected stage. """
-    #     if self.selected_option == 'tools' and self.selected_stage:
-    #         selected_tool = Tool.objects.filter(stage=self.selected_stage).first()
-    #         if selected_tool:
-    #             self.tool = selected_tool
-    #             self.save(update_fields=['tool'])
-    #             return selected_tool
-    #     return None
     def generate_script(self):
      if self.selected_option == 'scripts' and self.selected_stage:
         script = ResourceFactory.create_resource("script", self)
@@ -281,15 +259,14 @@ class CloudInstance(models.Model):
     def __str__(self):
         return f"{self.name} ({self.provider})"
 
-
 class MonitoringData(models.Model):
     """
     Stores real-time monitoring data for each cloud instance.
     """
     instance = models.ForeignKey(CloudInstance, on_delete=models.CASCADE, related_name="monitoring_data")
     cpu_usage = models.FloatField(help_text="CPU usage in percentage")
-    ram_usage = models.FloatField(help_text="RAM usage in percentage")
-    disk_usage = models.FloatField(help_text="Disk usage in percentage")
+    memory_usage = models.FloatField(help_text="Memory usage in percentage")
+    network_usage = models.FloatField(help_text="Network usage in percentage")
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -313,8 +290,8 @@ class MonitoringData(models.Model):
     """
     instance = models.ForeignKey(CloudInstance, on_delete=models.CASCADE, related_name="monitoring_data")
     cpu_usage = models.FloatField(help_text="CPU usage in percentage")
-    ram_usage = models.FloatField(help_text="RAM usage in percentage")
-    disk_usage = models.FloatField(help_text="Disk usage in percentage")
+    memory_usage = models.FloatField(help_text="RAM usage in percentage")
+    network_usage = models.FloatField(help_text="Disk usage in percentage")
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -616,7 +616,9 @@ from django.utils.decorators import method_decorator
 from .models import Script, Tool, PipelineStage, ProjectDetail
 from .serializers import UserSerializer, ScriptSerializer, ToolSerializer, ProjectDetailSerializer
 from .services.openai_service import generate_pipeline_script
-from django.middleware.csrf import get_token
+from .models import MonitoringData
+from .serializers import MonitoringDataSerializer
+
 
 # Info API View
 class InfoAPIView(APIView):
@@ -764,3 +766,39 @@ class FetchScriptView(APIView):
 def get_csrf_token(request):
     csrf_token = get_token(request)
     return JsonResponse({"csrfToken": csrf_token})
+
+@csrf_exempt  # Disable CSRF for testing; use authentication in production
+def post_monitor_data(request):
+    if request.method == 'POST':
+        try:
+            # Parse JSON data from request body
+            data = json.loads(request.body)
+
+            cpu_usage = data.get('cpu_usage')
+            memory_used = data.get('memory_used')
+            memory_total = data.get('memory_total')
+
+            # Validate required fields
+            if cpu_usage is None or memory_used is None or memory_total is None:
+                return JsonResponse({"error": "Missing required fields"}, status=400)
+
+            # Save data to database
+            SystemMetrics.objects.create(
+                cpu_usage=cpu_usage,
+                memory_used=memory_used,
+                memory_total=memory_total
+            )
+
+            return JsonResponse({"message": "Data received successfully"}, status=201)
+        
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+def get_monitor_data(request):
+    monitoring_entries = MonitoringData.objects.all().order_by('-timestamp')[:10]  # Get latest 10 entries
+    serializer = MonitoringDataSerializer(monitoring_entries, many=True)
+    return Response(serializer.data)

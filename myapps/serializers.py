@@ -113,7 +113,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Script, Tool, ProjectDetail, PipelineStage
-# , GeneratedScript
+from .models import MonitoringData
 
 # User Serializer
 class UserSerializer(serializers.ModelSerializer):
@@ -294,3 +294,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
 #             'project_type', 'testing_needs', 'created_at', 'updated_at'
 #         ]
 
+class MonitoringDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MonitoringData
+        fields = ['cpu_usage', 'ram_usage', 'disk_usage', 'timestamp']  # Include the fields you need
