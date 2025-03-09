@@ -767,6 +767,7 @@ def get_csrf_token(request):
     csrf_token = get_token(request)
     return JsonResponse({"csrfToken": csrf_token})
 
+
 @csrf_exempt  # Disable CSRF for testing; use authentication in production
 def post_monitor_data(request):
     if request.method == 'POST':
@@ -775,18 +776,20 @@ def post_monitor_data(request):
             data = json.loads(request.body)
 
             cpu_usage = data.get('cpu_usage')
-            memory_used = data.get('memory_used')
-            memory_total = data.get('memory_total')
+            memory_usage = data.get('memory_usage')  # Changed to match model field
+            network_usage = data.get('network_usage')  # Added
+            disk_usage = data.get('disk_usage')  # Added
 
             # Validate required fields
-            if cpu_usage is None or memory_used is None or memory_total is None:
+            if None in (cpu_usage, memory_usage, network_usage, disk_usage):
                 return JsonResponse({"error": "Missing required fields"}, status=400)
 
             # Save data to database
-            SystemMetrics.objects.create(
+            MonitoringData.objects.create(
                 cpu_usage=cpu_usage,
-                memory_used=memory_used,
-                memory_total=memory_total
+                memory_usage=memory_usage,
+                network_usage=network_usage,
+                disk_usage=disk_usage
             )
 
             return JsonResponse({"message": "Data received successfully"}, status=201)
