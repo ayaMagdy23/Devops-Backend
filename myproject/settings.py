@@ -211,7 +211,7 @@ DATABASES = {
         'NAME': 'postgres',  # Change this to your database name in pgAdmin
         'USER': 'postgres',  # Your PostgreSQL username
         'PASSWORD': 'ayagedoteta',  # The password you set for PostgreSQL
-        'HOST': 'localhost',  # Keep this if PostgreSQL is running locally
+        'HOST': '41.37.7.51',  # Keep this if PostgreSQL is running locally
         'PORT': '5432',  # Default PostgreSQL port
     }
 }
