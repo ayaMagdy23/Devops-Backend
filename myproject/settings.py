@@ -120,19 +120,31 @@
 from decouple import config
 import os
 from pathlib import Path
+import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-OPENAI_API_KEY = config("OPENAI_API_KEY")
 
-# Quick-start development settings - unsuitable for production
+# External API Keys
+SUPABASE_URL = 'https://xivukiickdgkworwjums.supabase.co'
+SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhpdnVraWlja2Rna3dvcndqdW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxOTM2MjIsImV4cCI6MjA1ODc2OTYyMn0.flnVDYNOYkz67aVRxuR-rw_Tcgb1BmduuEoeZ1fZTCE'
+
+# Security settings
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
-# Application definition
+# Static files
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),  # Ensure this path is correct
+]
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+# OpenAI API Key (if needed)
+OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
+
+# Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -140,52 +152,62 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    # 'rest_framework_api_key',
-    # 'rest_framework.authtoken',
-    'myapps',
-    'corsheaders'
+
     
+    'rest_framework_simplejwt',  # If you're using JWT for authentication
+    'rest_framework',  # If you're using DRF
+    'corsheaders',     # If you're using CORS
+
+    'myapps',  # Your custom app
+    
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
 ]
 
+
+
+
+# REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
 }
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",  # React frontend
-    "http://127.0.0.1:8000"   # Backend if accessed directly
-]
 
-CORS_ALLOW_CREDENTIALS = True  # Allow cookies (including CSRF)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000"  # React frontend
-]
-
-CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token
-CSRF_COOKIE_SECURE = False  # Set to True in production
-CSRF_USE_SESSIONS = False  # Keep False if using CSRF cookie
-
+# Middleware
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+     'corsheaders.middleware.CorsMiddleware',  # Ensure CORS middleware is above CommonMiddleware
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
+   
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
-# CORS configuration
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins (for development)
+
+CORS_ALLOW_CREDENTIALS = True  # Allow cookies (including CSRF)
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "http://192.168.56.1:3000",  # Your frontend's IP
 ]
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
+CSRF_USE_SESSIONS = True
 
+# URL Configuration
 ROOT_URLCONF = 'myproject.urls'
 
+# Templates settings
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -202,34 +224,20 @@ TEMPLATES = [
     },
 ]
 
+# WSGI application
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
-# Database configuration (PostgreSQL 15)
+# Database configuration (Using dj_database_url for flexibility)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',  # Change this to your database name in pgAdmin
-        'USER': 'postgres',  # Your PostgreSQL username
-        'PASSWORD': 'ayagedoteta',  # The password you set for PostgreSQL
-        'HOST': '41.37.7.51',  # Keep this if PostgreSQL is running locally
-        'PORT': '5432',  # Default PostgreSQL port
-    }
+    'default': dj_database_url.config(default=config('DATABASE_URL'))
 }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # Internationalization
@@ -238,7 +246,5 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
-STATIC_URL = '/static/'
-
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

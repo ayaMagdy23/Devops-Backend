@@ -613,99 +613,85 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .models import Script, Tool, PipelineStage, ProjectDetail
-from .serializers import UserSerializer, ScriptSerializer, ToolSerializer, ProjectDetailSerializer
+from django.middleware.csrf import get_token  # ✅ Added missing import
+from .models import Script, Tool, PipelineStage, ProjectDetail, MonitoringData
+from .serializers import (
+    UserSerializer, ScriptSerializer, ToolSerializer, ProjectDetailSerializer, MonitoringDataSerializer
+)
 from .services.openai_service import generate_pipeline_script
-from .models import MonitoringData
-from .serializers import MonitoringDataSerializer
+from django.contrib.auth.hashers import make_password
+from supabase import create_client
+from django.conf import settings
+import logging
 
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # Info API View
 class InfoAPIView(APIView):
     def get(self, request):
-        return Response({"message": "Welcome to the API!"}, status=200)
+        return Response({"message": "Welcome to the API!"}, status=status.HTTP_200_OK)
+
 
 # User Registration API View
+# Set up logging
+logger = logging.getLogger(__name__)
+
 class RegisterUserAPIView(APIView):
-    def get(self, request):
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({"message": "User created successfully!", "user_id": user.id}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        """Register a new user."""
+        data = request.data
 
+        try:
+            # Check if user already exists by email
+            existing_user = User.objects.filter(email=data.get("email")).first()
+            if existing_user:
+                return Response({"error": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if username already exists
+            existing_username = User.objects.filter(username=data.get("username")).first()
+            if existing_username:
+                return Response({"error": "Username already taken."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create the new user
+            user = User.objects.create_user(
+                username=data["username"],
+                email=data["email"],
+                password=data["password"]  # Django will hash the password automatically
+            )
+
+            # Return a success message
+            return Response({"message": "User registered successfully!", "user_id": user.id}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 # Login API View
 class LoginUserAPIView(APIView):
     def post(self, request):
+        print("Request Data:", request.data)  # Debugging line
+
+        # Get username and password from the request
         username = request.data.get('username')
         password = request.data.get('password')
 
+        # Check if username and password are provided
         if not username or not password:
             return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+        # Authenticate user using username and password
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            return Response({"message": "Login successful", "user_id": user.id}, status=status.HTTP_200_OK)
+            # Generate JWT tokens if authentication is successful
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "message": "Login successful",
+                "user_id": user.id,
+                "access_token": str(refresh.access_token),
+                "refresh_token": str(refresh)
+            }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
-# Script API View
-class ScriptAPIView(APIView):
-    def get(self, request, stage):
-        try:
-            pipeline_stage = PipelineStage.objects.get(name=stage)
-        except PipelineStage.DoesNotExist:
-            return Response({"error": "Stage not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        scripts = Script.objects.filter(stage=pipeline_stage)
-        script_data = [ScriptSerializer(script).data for script in scripts]
-        
-        return Response(script_data, status=status.HTTP_200_OK)
-
-    def post(self, request, stage):
-        try:
-            pipeline_stage = PipelineStage.objects.get(name=stage)
-        except PipelineStage.DoesNotExist:
-            return Response({"error": "Stage not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = ScriptSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(stage=pipeline_stage)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Tool API View
-class ToolAPIView(APIView):
-    def get(self, request, stage):
-        try:
-            pipeline_stage = PipelineStage.objects.get(name=stage)
-        except PipelineStage.DoesNotExist:
-            return Response({"error": "Stage not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        tools = Tool.objects.filter(stage=pipeline_stage)
-        tool_data = [ToolSerializer(tool).data for tool in tools]
-        
-        return Response(tool_data, status=status.HTTP_200_OK)
-
-    def post(self, request, stage):
-        try:
-            pipeline_stage = PipelineStage.objects.get(name=stage)
-        except PipelineStage.DoesNotExist:
-            return Response({"error": "Stage not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = ToolSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(stage=pipeline_stage)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Project Detail API View
 class ProjectDetailAPIView(APIView):
@@ -733,12 +719,13 @@ class ProjectDetailAPIView(APIView):
 
             project_detail.save()
             return Response(ProjectDetailSerializer(project_detail).data, status=status.HTTP_201_CREATED)
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # Generate Script API View
 class GenerateScriptAPIView(APIView):
-    @method_decorator(csrf_exempt)  # Disable CSRF for this view
+    @method_decorator(csrf_exempt)  # ✅ Disable CSRF for this view
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
@@ -747,42 +734,51 @@ class GenerateScriptAPIView(APIView):
         script = generate_pipeline_script(user_inputs)
         return Response({"script": script}, status=status.HTTP_200_OK)
 
+
 # Fetch Script API View
 class FetchScriptView(APIView):
     def get(self, request, project_id, stage_id):
         try:
             project_detail = ProjectDetail.objects.get(id=project_id)
-            if project_detail.framework == "Node.js" and stage_id == "development":
-                script = Script.objects.filter(project_detail=project_detail, stage__name="Development").first()
-                if script:
-                    return Response({"script_content": script.script_content}, status=200)
-                else:
-                    return Response({"error": "No Node.js script found for the Development stage."}, status=404)
+            stage = PipelineStage.objects.filter(name=stage_id).first()
+
+            if not stage:
+                return Response({"error": "Stage not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            script = Script.objects.filter(project_detail=project_detail, stage=stage).first()
+            if script:
+                return Response({"script_content": script.script_content}, status=status.HTTP_200_OK)
             else:
-                return Response({"error": "No matching framework or stage found."}, status=404)
+                return Response({"error": "No script found for the given stage."}, status=status.HTTP_404_NOT_FOUND)
+
         except ProjectDetail.DoesNotExist:
-            return Response({"error": "Project not found."}, status=404)
+            return Response({"error": "Project not found."}, status=status.HTTP_404_NOT_FOUND)
 
+
+# CSRF Token Retrieval API View
 def get_csrf_token(request):
-    csrf_token = get_token(request)
-    return JsonResponse({"csrfToken": csrf_token})
+    try:
+        csrf_token = get_token(request)
+        return JsonResponse({"csrfToken": csrf_token}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@csrf_exempt  # Disable CSRF for testing; use authentication in production
+# Monitoring Data API Views
+@csrf_exempt  # ✅ Disable CSRF for testing; use authentication in production
 def post_monitor_data(request):
     if request.method == 'POST':
         try:
-            # Parse JSON data from request body
-            data = json.loads(request.body)
+            data = request.data  # ✅ Use Django REST Framework's request parsing
 
             cpu_usage = data.get('cpu_usage')
-            memory_usage = data.get('memory_usage')  # Changed to match model field
-            network_usage = data.get('network_usage')  # Added
-            disk_usage = data.get('disk_usage')  # Added
+            memory_usage = data.get('memory_usage')
+            network_usage = data.get('network_usage')
+            disk_usage = data.get('disk_usage')
 
             # Validate required fields
             if None in (cpu_usage, memory_usage, network_usage, disk_usage):
-                return JsonResponse({"error": "Missing required fields"}, status=400)
+                return JsonResponse({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Save data to database
             MonitoringData.objects.create(
@@ -792,16 +788,23 @@ def post_monitor_data(request):
                 disk_usage=disk_usage
             )
 
-            return JsonResponse({"message": "Data received successfully"}, status=201)
-        
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            return JsonResponse({"message": "Data received successfully"}, status=status.HTTP_201_CREATED)
 
-    return JsonResponse({"error": "Invalid request"}, status=405)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    return JsonResponse({"error": "Invalid request method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['GET'])
 def get_monitor_data(request):
-    monitoring_entries = MonitoringData.objects.all().order_by('-timestamp')[:10]  # Get latest 10 entries
-    serializer = MonitoringDataSerializer(monitoring_entries, many=True)
-    return Response(serializer.data)
+    try:
+        monitoring_entries = MonitoringData.objects.all().order_by('-timestamp')[:10]  # Get latest 10 entries
+        serializer = MonitoringDataSerializer(monitoring_entries, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+
