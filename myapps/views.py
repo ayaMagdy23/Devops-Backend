@@ -1025,3 +1025,20 @@ def check_email(request):
             return Response({'isValid': False}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     else:
         return Response({'isValid': False}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated  # Ensure user is authenticated
+from .models import ProjectDetail
+from .serializers import ProjectDetailSerializer
+
+class PastProjectsAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def get(self, request):
+        # Fetch all projects for the logged-in user
+        user = request.user  # Get the current authenticated user
+        projects = ProjectDetail.objects.filter(user=user)  # Filter projects by user
+        serializer = ProjectDetailSerializer(projects, many=True)  # Serialize the data
+        return Response(serializer.data, status=status.HTTP_200_OK)
