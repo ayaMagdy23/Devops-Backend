@@ -248,3 +248,7 @@ USE_TZ = True
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# settings.py
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Store sessions in the database
