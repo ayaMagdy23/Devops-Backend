@@ -126,6 +126,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 OPENAI_API_KEY = config("OPENAI_API_KEY")
+os.environ['REQUESTS_CA_BUNDLE'] = 'C:\\Users\\DELL\\Documents\\GitHub\\Devops-Backend\\venv\\Lib\\site-packages\\certifi\\cacert.pem'
 
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = config('SECRET_KEY')
@@ -152,6 +153,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
+        'rest_framework.renderers.TemplateHTMLRenderer',
     ],
 }
 CSRF_TRUSTED_ORIGINS = [
@@ -211,7 +213,7 @@ DATABASES = {
         'NAME': 'postgres',  # Change this to your database name in pgAdmin
         'USER': 'postgres',  # Your PostgreSQL username
         'PASSWORD': 'ayagedoteta',  # The password you set for PostgreSQL
-        'HOST': '41.37.7.51',  # Keep this if PostgreSQL is running locally
+        'HOST': 'Localhost',  # Keep this if PostgreSQL is running locally
         'PORT': '5432',  # Default PostgreSQL port
     }
 }

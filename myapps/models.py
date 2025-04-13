@@ -153,6 +153,7 @@
 # 
 
 from django.db import models
+from .scaling.context import ScalingContext
 
 class PipelineStage(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -169,24 +170,6 @@ class Tool(models.Model):
     def __str__(self):
         return self.name
     
-    class ResourceFactory:
-      """Factory Method to generate either a Script or a Tool dynamically."""
-
-    @staticmethod
-    def create_resource(resource_type, project_detail):
-        if resource_type == "script":
-            return Script.objects.create(
-                stage=project_detail.selected_stage,
-                title=f"{project_detail.project_name} Script",
-                description="Auto-generated script",
-                script_content="Generated script content"
-            )
-        elif resource_type == "tool":
-            tool = Tool.objects.filter(stage=project_detail.selected_stage).first()
-            return tool if tool else None
-        else:
-            raise ValueError("Invalid resource type specified")
-
 
 class ProjectDetail(models.Model):
     project_name = models.CharField(max_length=255)
@@ -245,58 +228,70 @@ class Script(models.Model):
     def __str__(self):
         return self.title
     
-    from django.db import models
+class ResourceFactory:
+    """Factory Method to generate either a Script or a Tool dynamically."""
+    
+    @staticmethod
+    def create_resource(resource_type, project_detail):
+        if resource_type == "script":
+            return Script.objects.create(
+                stage=project_detail.selected_stage,
+                title=f"{project_detail.project_name} Script",
+                description="Auto-generated script",
+                script_content="Generated script content"
+            )
+        elif resource_type == "tool":
+            tool = Tool.objects.filter(stage=project_detail.selected_stage).first()
+            return tool if tool else None
+        else:
+            raise ValueError("Invalid resource type specified")
+        
 
+#  System Usage Monitoring 
+class SystemUsage(models.Model):
+    cpu_usage = models.FloatField(help_text="CPU usage in percentage")
+    memory_usage = models.FloatField(help_text="Memory usage in percentage")
+    disk_usage = models.FloatField(help_text="Disk usage in percentage")
+    network_sent = models.FloatField(help_text="Amount of data sent (in MB)")
+    network_received = models.FloatField(help_text="Amount of data received (in MB)")
+    timestamp = models.DateTimeField(auto_now_add=True, help_text="Timestamp of when the data was recorded")
+
+    def __str__(self):
+        return f"CPU: {self.cpu_usage}%, Memory: {self.memory_usage}%, Disk: {self.disk_usage}%"
+
+
+#  Cloud Monitoring Models 
 class CloudInstance(models.Model):
-    """
-    Represents a cloud instance (e.g., AWS EC2, Azure VM) that needs monitoring.
-    """
     name = models.CharField(max_length=255)
-    provider = models.CharField(max_length=50, choices=[('AWS', 'AWS'), ('Azure', 'Azure'), ('GCP', 'GCP')])
+    provider = models.CharField(max_length=50, choices=[('AWS', 'AWS'), ('Azure', 'Azure')])
     instance_id = models.CharField(max_length=100, unique=True)
     api_url = models.URLField(help_text="API endpoint for fetching instance metrics")
+
+    def scale_up(self):
+        context = ScalingContext(self)
+        return context.scale_up()
+
+    def scale_down(self):
+        context = ScalingContext(self)
+        return context.scale_down()
 
     def __str__(self):
         return f"{self.name} ({self.provider})"
 
+
+
 class MonitoringData(models.Model):
     """
-    Stores real-time monitoring data for each cloud instance.
+    Model to store real-time monitoring data.
     """
-    instance = models.ForeignKey(CloudInstance, on_delete=models.CASCADE, related_name="monitoring_data")
     cpu_usage = models.FloatField(help_text="CPU usage in percentage")
     memory_usage = models.FloatField(help_text="Memory usage in percentage")
     network_usage = models.FloatField(help_text="Network usage in percentage")
-    timestamp = models.DateTimeField(auto_now_add=True)
+    disk_usage = models.FloatField(help_text="Disk usage in percentage")
+    timestamp = models.DateTimeField(auto_now_add=True, help_text="Timestamp of the data collected")
 
     def __str__(self):
-        return f"Metrics for {self.instance.name} at {self.timestamp}"
-
-
-class ScalingAction(models.Model):
-
-    instance = models.ForeignKey(CloudInstance, on_delete=models.CASCADE, related_name="scaling_actions")
-    action = models.CharField(max_length=50, choices=[("scale_up", "Scale Up"), ("scale_down", "Scale Down")])
-    status = models.CharField(max_length=50, help_text="Status of scaling operation (e.g., Success, Failed)")
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.instance.name} - {self.action} at {self.timestamp}"
-
-
-class MonitoringData(models.Model):
-    """
-    Stores real-time monitoring data for each cloud instance.
-    """
-    instance = models.ForeignKey(CloudInstance, on_delete=models.CASCADE, related_name="monitoring_data")
-    cpu_usage = models.FloatField(help_text="CPU usage in percentage")
-    memory_usage = models.FloatField(help_text="RAM usage in percentage")
-    network_usage = models.FloatField(help_text="Network usage in percentage")  # Fixed help text
-    disk_usage = models.FloatField(help_text="Disk usage in percentage")  # Added missing field
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Metrics for {self.instance.name} at {self.timestamp}"
+        return f"Monitoring data at {self.timestamp} - CPU: {self.cpu_usage}%"
 
 
 class ScalingAction(models.Model):
@@ -312,3 +307,11 @@ class ScalingAction(models.Model):
         return f"{self.instance.name} - {self.action} at {self.timestamp}"
 
 
+
+class ScalingPrediction(models.Model):
+    system_usage = models.ForeignKey('SystemUsage', on_delete=models.CASCADE)
+    needs_scaling = models.BooleanField()
+    predicted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Scaling: {self.needs_scaling} @ {self.predicted_at}"
