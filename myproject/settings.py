@@ -212,9 +212,12 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',  # Change this to your database name in pgAdmin
         'USER': 'postgres',  # Your PostgreSQL username
-        'PASSWORD': 'ayagedoteta',  # The password you set for PostgreSQL
-        'HOST': 'Localhost',  # Keep this if PostgreSQL is running locally
+        'PASSWORD': 'G7vK93aZpT2wL1xB',  # The password you set for PostgreSQL
+        'HOST': 'devops-proj.chmswo02gtgh.eu-west-2.rds.amazonaws.com',  # Keep this if PostgreSQL is running locally
         'PORT': '5432',  # Default PostgreSQL port
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
     }
 }
 
