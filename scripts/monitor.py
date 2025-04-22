@@ -2,7 +2,7 @@ import psutil
 import requests
 
 # URL for your Django API endpoint
-API_URL = "http://127.0.0.1:8000/api/post-monitor-data/"
+API_URL = "http://35.179.146.101:8000/api/post-monitor-data/"
 
 
 def collect_metrics():
