@@ -131,3 +131,4 @@ urlpatterns = [
     # File Download
     path('download-monitor/', download_monitor_script, name='download_monitor_script'),
 ]
+
