@@ -281,7 +281,7 @@
 
 # def get_csrf_token(request):
 #     csrf_token = get_token(request)
-
+#     return JsonResponse({"csrfToken": csrf_token})
 
 
 # @csrf_exempt
