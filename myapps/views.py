@@ -364,12 +364,14 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
+
 
 from .models import (
     MonitoringData, Script, SystemUsage, Tool, PipelineStage, ProjectDetail
@@ -456,6 +458,26 @@ def get_monitor_data(request):
     serializer = MonitoringDataSerializer(MonitoringData.objects.all().order_by('-timestamp')[:10], many=True)
     return Response(serializer.data)
 
+# @csrf_exempt
+# def post_monitor_data(request):
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             MonitoringData.objects.create(
+#                 cpu_usage=data['cpu_usage'],
+#                 memory_usage=data['memory_usage'],
+#                 disk_usage=data['disk_usage'],
+#                 network_usage=data['network_usage']
+#             )
+#             return JsonResponse({"status": "success", "data": data}, status=201)
+#         except Exception as e:
+#             return JsonResponse({"status": "error", "message": str(e)}, status=400)
+#     return JsonResponse({"status": "error", "message": "Invalid request"}, status=405)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def post_monitor_data(request):
     if request.method == 'POST':
