@@ -458,22 +458,6 @@ def get_monitor_data(request):
     serializer = MonitoringDataSerializer(MonitoringData.objects.all().order_by('-timestamp')[:10], many=True)
     return Response(serializer.data)
 
-# @csrf_exempt
-# def post_monitor_data(request):
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             MonitoringData.objects.create(
-#                 cpu_usage=data['cpu_usage'],
-#                 memory_usage=data['memory_usage'],
-#                 disk_usage=data['disk_usage'],
-#                 network_usage=data['network_usage']
-#             )
-#             return JsonResponse({"status": "success", "data": data}, status=201)
-#         except Exception as e:
-#             return JsonResponse({"status": "error", "message": str(e)}, status=400)
-#     return JsonResponse({"status": "error", "message": "Invalid request"}, status=405)
-
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
