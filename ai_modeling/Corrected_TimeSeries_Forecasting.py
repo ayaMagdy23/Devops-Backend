@@ -76,7 +76,8 @@ while True:
         if not os.path.exists(MODEL_PATH):
             train_model(df)
 
-        # Predict and print
+        # Predict and 
+        #print
         df = process_data(df)
         print(df[['id', 'cpu_usage', 'memory_usage', 'scaling_action']].to_string(index=False))
 
