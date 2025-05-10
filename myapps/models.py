@@ -249,7 +249,6 @@ class ResourceFactory:
 
 #  System Usage Monitoring 
 class SystemUsage(models.Model):
-    server_id = models.CharField(max_length=100, default='default-instance')
     cpu_usage = models.FloatField(help_text="CPU usage in percentage")
     memory_usage = models.FloatField(help_text="Memory usage in percentage")
     disk_usage = models.FloatField(help_text="Disk usage in percentage")

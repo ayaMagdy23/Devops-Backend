@@ -364,14 +364,12 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import TokenAuthentication
-
 
 from .models import (
     MonitoringData, Script, SystemUsage, Tool, PipelineStage, ProjectDetail
@@ -458,20 +456,12 @@ def get_monitor_data(request):
     serializer = MonitoringDataSerializer(MonitoringData.objects.all().order_by('-timestamp')[:10], many=True)
     return Response(serializer.data)
 
-
-@api_view(['POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
 @csrf_exempt
 def post_monitor_data(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # Use data.get('server_id') instead of data.get['server_id']
-            server_id = data.get('server_id')
-
             MonitoringData.objects.create(
-                server_id=server_id,  # Add server_id here
                 cpu_usage=data['cpu_usage'],
                 memory_usage=data['memory_usage'],
                 disk_usage=data['disk_usage'],
@@ -481,42 +471,25 @@ def post_monitor_data(request):
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
     return JsonResponse({"status": "error", "message": "Invalid request"}, status=405)
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-import json
-from .models import SystemUsage  # Make sure this is imported
 
 @csrf_exempt
 def receive_metrics(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            
-            # Extract server_id from the request data
-            server_id = data.get('server_id')
-            if not server_id:
-                return JsonResponse({"error": "Server ID is missing"}, status=400)
-            
-            # Create a new SystemUsage record with server_id and metrics
             SystemUsage.objects.create(
-                server_id=server_id,
                 cpu_usage=data.get('cpu_usage', 0),
                 memory_usage=data.get('memory_usage', 0),
                 disk_usage=data.get('disk_usage', 0),
                 network_sent=data.get('network_sent', 0),
                 network_received=data.get('network_received', 0)
             )
-
             return JsonResponse({"message": "Metrics received successfully!"}, status=200)
-
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
-
     return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
-
-
 
 def download_monitor_script(request):
     script_path = os.path.join(settings.BASE_DIR, 'scripts', 'monitor.py')

@@ -50,7 +50,6 @@
 # if __name__ == "__main__":
 #     collect_metrics()
 
-import socket
 import psutil
 import requests
 import time
@@ -59,10 +58,8 @@ import time
 API_URL = "http://35.179.146.101:8000/api/post-monitor-data/"
 
 def collect_metrics():
-    server_id = socket.gethostname()  # Get the server's hostname
-
     """Collect system resource usage and send to Django API."""
-    cpu = psutil.cpu_percent(interval=60)  # Collect CPU usage over 60 seconds
+    cpu = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory().percent
     disk = psutil.disk_usage('/').percent
     net_io = psutil.net_io_counters()
@@ -72,9 +69,7 @@ def collect_metrics():
     network_received = net_io.bytes_recv / (1024 * 1024)
     network_usage = network_sent + network_received
 
-    # Include server_id in the data sent to the API
     data = {
-        "server_id": server_id,
         "cpu_usage": cpu,
         "memory_usage": memory,
         "disk_usage": disk,
@@ -112,5 +107,5 @@ def start_monitoring(interval=60):
         print(f"❗ Monitoring stopped due to error: {e}")
 
 if __name__ == "__main__":
-    start_monitoring(interval=60)  # Collect metrics every 60 seconds
+    start_monitoring(interval=60)
 
