@@ -1,0 +1,22 @@
+[
+  {
+    "Question": "How to resolve the error no module named pandas when one node (in Airflow's DAG) is successful in using it(pandas) and the other is not?\nI am unable to deduce as to why I am getting an error no module named pandas.\nI have checked via pip3 freeze and yes, the desired pandas version does show up.\nI have deployed this using docker on a kubernetes cluster.\n",
+    "Answer": "Pandas is generally required, and sometimes used in some hooks to return dataframes. Well, it's possible that Airflow was installed with pip and not pip3 possibly being added as a Python 2 module and not a Python 3 module (though, using pip should have installed Pandas when one looks at the setup.py).\nWhich Operator in your DAG is giving this error?\nDo you have any PythonVirtualEnvironmentOperators or BashOperators running python from the command line (and thus possibly not sharing the same environment that you're checking has pandas)?\n"
+  },
+  {
+    "Question": "I've been using the kubectl to upload Airflow workflows to the kubernetes (/usr/local/airflow/dags) manually. It is possible to do this without using the kubectl? by using a python script? or something else? If it's possible would you be able to share your source? or your python script? Thanks, Appreciate\n",
+    "Answer": "This totally depends on your setup. E.G. We use AWS and so we have the DAGs syncing from an S3 bucket path every 5 minutes. We just put dags into S3. I see that some Kubernetes setups use a kind of shared volume defined by a git repository, that might also work. Airflow itself (the webserver(s), worker(s), nor scheduler) does not offer any hook to upload into the DAG directory.\n"
+  },
+  {
+    "Question": "Is there currently a way to serve websockets from an application deployed on Okteto cloud given the okteto-specific limitations around Ingresses and Services ?\n\nI've read that this would only be possible using a Service or Ingress of type LoadBalancer, so that is what I've tried.\nBut, according to the Okteto docs, Services of type LoadBalancer (or NodePort) are managed. In practice they seem to get transformed automatically into a ClusterIP Service, + exposed to the internet on an automatic URL.\nDo these handle only HTTP requests ? Or is there a way to make them handle other kinds of connections based on TCP or UDP (like websockets) ?\n",
+    "Answer": "You don't need a LoadBalancer to use WebSockets, they can be served from an Ingress with a ClusterIP as well (this is what Okteto Cloud uses for our endpoints). This setup supports HTTPS, WebSockets and even GRPC-based endpoints.\nThis sample shows you how to use WebSockets on a Node app deployed in Okteto Cloud, hope it helps! (it uses okteto-generated Kubernetes manifests, but you can also bring your own).\n"
+  },
+  {
+    "Question": "Recently, I tried to setup Jenkins X on a kubernetes cluster. However there exists some problem during installation. \nThere are several options in jx create cluster such as aks(create with AKS), aws(create with AWS), minikube(create with Minikube) and etc.\nHowever there is no option which create a cluster with local kubernetes cluster. I want to setup Jenkins X with my own cluster. \nCan I get some advice?\nThanks.\n",
+    "Answer": "when you have your cluster setup such that you can run kubectl commands against it, you can run jx boot to setup your jx installation. You don't need to use jx create cluster as your cluster already exists. \n"
+  },
+  {
+    "Question": "The data needs to be loaded periodically (like once in a day), and it should be stored in SQL format so that the API can run SQL queries.\nWe are thinking of loading it from HDFS. Currently we are thinking of using Apache Nifi using PutIgniteCache. \nI was thinking probably I can launch a remote Ignite client node and then use IgniteDataStreamer to stream the data, but I was not able to find proper documentation for that. Are there any better ways to do this?\n",
+    "Answer": "The documentation for Nifi says that it uses the data streamer API, so unless you need more control it doesn\u2019t seem like a bad option (with the caveat that I\u2019d never heard of Nifi before much less used it!).\n"
+  }
+]
